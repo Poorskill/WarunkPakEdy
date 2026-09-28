@@ -58,6 +58,10 @@ class InventoryController extends Controller
 
     public function adjustStock(StockAdjustmentRequest $request): RedirectResponse
     {
+        if (! Auth::user()?->isOwner()) {
+            abort(403, 'Hanya Owner yang dapat melakukan penyesuaian stok manual.');
+        }
+
         try {
             DB::transaction(function () use ($request) {
                 /** @var Product $product */
@@ -101,6 +105,10 @@ class InventoryController extends Controller
 
     public function movements(Request $request): Response
     {
+        if (! in_array(Auth::user()?->role, ['owner', 'admin'], true)) {
+            abort(403, 'Hanya Owner dan Admin yang dapat melihat riwayat pergerakan stok.');
+        }
+
         $search = $request->input('search', '');
         $type = $request->input('type', '');
 

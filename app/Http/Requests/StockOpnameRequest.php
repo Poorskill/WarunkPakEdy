@@ -8,7 +8,7 @@ class StockOpnameRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return true;
+        return in_array($this->user()?->role, ['owner', 'admin'], true);
     }
 
     public function rules(): array

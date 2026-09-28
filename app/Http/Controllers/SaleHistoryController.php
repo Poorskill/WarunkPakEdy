@@ -11,12 +11,14 @@ class SaleHistoryController extends Controller
 {
     public function index(Request $request): Response
     {
+        $user = $request->user();
         $search = $request->input('search', '');
         $status = $request->input('status', '');
         $paymentMethod = $request->input('payment_method', '');
         $date = $request->input('date', '');
 
         $sales = Sale::with(['customer', 'user', 'payments', 'items'])
+            ->when($user->isCashier(), fn ($q) => $q->where('user_id', $user->id))
             ->when($search, fn ($q) => $q->where(function ($q) use ($search) {
                 $q->where('invoice_number', 'like', "%{$search}%")
                     ->orWhereHas('customer', fn ($cq) => $cq->where('name', 'like', "%{$search}%"));
@@ -39,8 +41,14 @@ class SaleHistoryController extends Controller
         ]);
     }
 
-    public function show(Sale $sale): Response
+    public function show(Request $request, Sale $sale): Response
     {
+        $user = $request->user();
+
+        if ($user->isCashier() && $sale->user_id !== $user->id) {
+            abort(403, 'Akses ditolak. Anda hanya dapat melihat transaksi penjualan milik Anda sendiri.');
+        }
+
         $sale->load(['customer', 'user', 'payments', 'items.product', 'returns.items']);
 
         return Inertia::render('sales/show', [

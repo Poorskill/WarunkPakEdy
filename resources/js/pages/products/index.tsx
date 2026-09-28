@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Head, Link, router } from '@inertiajs/react';
+import { Head, Link, router, usePage } from '@inertiajs/react';
 import { Plus, Pencil, Trash2, Package } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
@@ -67,6 +67,11 @@ export default function ProductsIndex({
     categories,
     filters,
 }: ProductsIndexProps) {
+    const { auth } = usePage().props as { auth: { user: { role: string } } };
+    const role = auth?.user?.role || 'owner';
+    const isOwner = role === 'owner';
+    const canManage = ['owner', 'admin'].includes(role);
+
     const [search, setSearch] = useState(filters.search || '');
     const [categoryId, setCategoryId] = useState(filters.category_id || 'all');
     const [stockStatus, setStockStatus] = useState(
@@ -142,15 +147,17 @@ export default function ProductsIndex({
                             Kelola data master produk, harga, dan stok barang
                         </p>
                     </div>
-                    <Button
-                        asChild
-                        className="bg-[#047857] font-semibold text-white hover:bg-[#065F46]"
-                    >
-                        <Link href="/products/create">
-                            <Plus className="mr-1.5 size-4" />
-                            Tambah Produk
-                        </Link>
-                    </Button>
+                    {canManage && (
+                        <Button
+                            asChild
+                            className="bg-[#047857] font-semibold text-white hover:bg-[#065F46]"
+                        >
+                            <Link href="/products/create">
+                                <Plus className="mr-1.5 size-4" />
+                                Tambah Produk
+                            </Link>
+                        </Button>
+                    )}
                 </div>
 
                 <div className="rounded-lg border border-[#E2E8F0] bg-white">
@@ -342,34 +349,40 @@ export default function ProductsIndex({
                                                     />
                                                 </td>
                                                 <td className="px-4 py-3 text-center">
-                                                    <div className="flex items-center justify-center gap-1">
-                                                        <Button
-                                                            variant="ghost"
-                                                            size="icon"
-                                                            asChild
-                                                            className="size-8 text-[#64748B] hover:text-[#047857]"
-                                                            title="Edit"
-                                                        >
-                                                            <Link
-                                                                href={`/products/${p.id}/edit`}
+                                                    {canManage ? (
+                                                        <div className="flex items-center justify-center gap-1">
+                                                            <Button
+                                                                variant="ghost"
+                                                                size="icon"
+                                                                asChild
+                                                                className="size-8 text-[#64748B] hover:text-[#047857]"
+                                                                title="Edit"
                                                             >
-                                                                <Pencil className="size-4" />
-                                                            </Link>
-                                                        </Button>
-                                                        <Button
-                                                            variant="ghost"
-                                                            size="icon"
-                                                            onClick={() =>
-                                                                setDeletingProduct(
-                                                                    p,
-                                                                )
-                                                            }
-                                                            className="size-8 text-[#64748B] hover:text-[#DC2626]"
-                                                            title="Hapus"
-                                                        >
-                                                            <Trash2 className="size-4" />
-                                                        </Button>
-                                                    </div>
+                                                                <Link
+                                                                    href={`/products/${p.id}/edit`}
+                                                                >
+                                                                    <Pencil className="size-4" />
+                                                                </Link>
+                                                            </Button>
+                                                            {isOwner && (
+                                                                <Button
+                                                                    variant="ghost"
+                                                                    size="icon"
+                                                                    onClick={() =>
+                                                                        setDeletingProduct(
+                                                                            p,
+                                                                        )
+                                                                    }
+                                                                    className="size-8 text-[#64748B] hover:text-[#DC2626]"
+                                                                    title="Hapus"
+                                                                >
+                                                                    <Trash2 className="size-4" />
+                                                                </Button>
+                                                            )}
+                                                        </div>
+                                                    ) : (
+                                                        <span className="text-xs text-[#94A3B8]">-</span>
+                                                    )}
                                                 </td>
                                             </tr>
                                         );

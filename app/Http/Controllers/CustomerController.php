@@ -50,6 +50,10 @@ class CustomerController extends Controller
 
     public function destroy(Customer $customer): RedirectResponse
     {
+        if (! auth()->user()?->isOwner()) {
+            abort(403, 'Hanya Owner yang dapat menghapus data pelanggan.');
+        }
+
         $customer->delete();
 
         return redirect()->route('customers.index')

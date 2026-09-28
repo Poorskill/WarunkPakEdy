@@ -145,6 +145,10 @@ class PurchaseController extends Controller
 
     public function complete(Purchase $purchase): RedirectResponse
     {
+        if (! in_array(Auth::user()?->role, ['owner', 'admin'], true)) {
+            abort(403, 'Akses ditolak.');
+        }
+
         if ($purchase->status !== 'draft') {
             return redirect()->back()->with('error', 'Hanya pembelian berstatus draft yang dapat diselesaikan.');
         }
@@ -186,6 +190,10 @@ class PurchaseController extends Controller
 
     public function cancel(Purchase $purchase): RedirectResponse
     {
+        if (! in_array(Auth::user()?->role, ['owner', 'admin'], true)) {
+            abort(403, 'Akses ditolak.');
+        }
+
         if ($purchase->status !== 'draft') {
             return redirect()->back()->with('error', 'Hanya pembelian berstatus draft yang dapat dibatalkan.');
         }

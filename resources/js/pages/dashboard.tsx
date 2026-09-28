@@ -1,4 +1,4 @@
-import { Head, Link } from '@inertiajs/react';
+import { Head, Link, usePage } from '@inertiajs/react';
 import {
     BarChart3,
     Package,
@@ -11,6 +11,9 @@ import {
     ArrowRight,
     Boxes,
     ChevronRight,
+    UserCircle,
+    Receipt,
+    RotateCcw,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { dashboard } from '@/routes';
@@ -92,28 +95,49 @@ export default function Dashboard({
     lowStockProducts = [],
     recentSales = [],
 }: DashboardProps) {
+    const { auth } = usePage().props as { auth: { user: { role: string; name: string } } };
+    const role = auth?.user?.role || 'owner';
+    const isOwner = role === 'owner';
+    const isCashier = role === 'cashier';
+
     const kpiCards = [
         {
-            title: 'Penjualan Hari Ini',
+            title: isCashier ? 'Penjualan Saya Hari Ini' : 'Penjualan Hari Ini',
             value: formatRupiah(metrics?.todaySales || 0),
             icon: BarChart3,
             iconBg: 'bg-[#ECFDF5]',
             iconColor: 'text-[#047857]',
         },
         {
-            title: 'Transaksi Hari Ini',
+            title: isCashier ? 'Transaksi Saya Hari Ini' : 'Transaksi Hari Ini',
             value: `${metrics?.todayTransactions || 0} Nota`,
             icon: ShoppingCart,
             iconBg: 'bg-[#EFF6FF]',
             iconColor: 'text-[#2563EB]',
         },
-        {
-            title: 'Estimasi Laba Hari Ini',
-            value: formatRupiah(metrics?.todayProfit || 0),
-            icon: TrendingUp,
-            iconBg: 'bg-[#F5F3FF]',
-            iconColor: 'text-[#7C3AED]',
-        },
+        isOwner
+            ? {
+                  title: 'Estimasi Laba Hari Ini',
+                  value: formatRupiah(metrics?.todayProfit || 0),
+                  icon: TrendingUp,
+                  iconBg: 'bg-[#F5F3FF]',
+                  iconColor: 'text-[#7C3AED]',
+              }
+            : isCashier
+            ? {
+                  title: 'Total Pelanggan Terdaftar',
+                  value: `${metrics?.totalCustomers || 0} Pelanggan`,
+                  icon: UserCircle,
+                  iconBg: 'bg-[#F5F3FF]',
+                  iconColor: 'text-[#7C3AED]',
+              }
+            : {
+                  title: 'Total Jenis Produk',
+                  value: `${metrics?.totalProducts || 0} Produk`,
+                  icon: Package,
+                  iconBg: 'bg-[#F5F3FF]',
+                  iconColor: 'text-[#7C3AED]',
+              },
         {
             title: 'Stok Perlu Restock',
             value: `${(metrics?.lowStockCount || 0) + (metrics?.outOfStockCount || 0)} Produk`,
@@ -204,38 +228,77 @@ export default function Dashboard({
                             <ChevronRight className="size-3.5 text-[#94A3B8] group-hover:text-[#047857] transition-colors" />
                         </Link>
 
-                        <Link
-                            href="/products/create"
-                            className="flex items-center justify-between p-3 rounded-lg border border-[#E2E8F0] hover:border-[#047857] hover:bg-[#ECFDF5]/50 transition-all group"
-                        >
-                            <div className="flex items-center gap-2.5">
-                                <Plus className="size-4 text-[#047857]" />
-                                <span className="text-xs font-semibold text-[#0F172A]">Tambah Produk</span>
-                            </div>
-                            <ChevronRight className="size-3.5 text-[#94A3B8] group-hover:text-[#047857] transition-colors" />
-                        </Link>
+                        {isCashier ? (
+                            <>
+                                <Link
+                                    href="/sales"
+                                    className="flex items-center justify-between p-3 rounded-lg border border-[#E2E8F0] hover:border-[#047857] hover:bg-[#ECFDF5]/50 transition-all group"
+                                >
+                                    <div className="flex items-center gap-2.5">
+                                        <Receipt className="size-4 text-[#047857]" />
+                                        <span className="text-xs font-semibold text-[#0F172A]">Riwayat Penjualan</span>
+                                    </div>
+                                    <ChevronRight className="size-3.5 text-[#94A3B8] group-hover:text-[#047857] transition-colors" />
+                                </Link>
 
-                        <Link
-                            href="/purchases/create"
-                            className="flex items-center justify-between p-3 rounded-lg border border-[#E2E8F0] hover:border-[#047857] hover:bg-[#ECFDF5]/50 transition-all group"
-                        >
-                            <div className="flex items-center gap-2.5">
-                                <Truck className="size-4 text-[#047857]" />
-                                <span className="text-xs font-semibold text-[#0F172A]">Catat Pembelian</span>
-                            </div>
-                            <ChevronRight className="size-3.5 text-[#94A3B8] group-hover:text-[#047857] transition-colors" />
-                        </Link>
+                                <Link
+                                    href="/customers"
+                                    className="flex items-center justify-between p-3 rounded-lg border border-[#E2E8F0] hover:border-[#047857] hover:bg-[#ECFDF5]/50 transition-all group"
+                                >
+                                    <div className="flex items-center gap-2.5">
+                                        <UserCircle className="size-4 text-[#047857]" />
+                                        <span className="text-xs font-semibold text-[#0F172A]">Pelanggan / Member</span>
+                                    </div>
+                                    <ChevronRight className="size-3.5 text-[#94A3B8] group-hover:text-[#047857] transition-colors" />
+                                </Link>
 
-                        <Link
-                            href="/stock-opnames/create"
-                            className="flex items-center justify-between p-3 rounded-lg border border-[#E2E8F0] hover:border-[#047857] hover:bg-[#ECFDF5]/50 transition-all group"
-                        >
-                            <div className="flex items-center gap-2.5">
-                                <ClipboardCheck className="size-4 text-[#047857]" />
-                                <span className="text-xs font-semibold text-[#0F172A]">Stock Opname</span>
-                            </div>
-                            <ChevronRight className="size-3.5 text-[#94A3B8] group-hover:text-[#047857] transition-colors" />
-                        </Link>
+                                <Link
+                                    href="/returns"
+                                    className="flex items-center justify-between p-3 rounded-lg border border-[#E2E8F0] hover:border-[#047857] hover:bg-[#ECFDF5]/50 transition-all group"
+                                >
+                                    <div className="flex items-center gap-2.5">
+                                        <RotateCcw className="size-4 text-[#047857]" />
+                                        <span className="text-xs font-semibold text-[#0F172A]">Retur Barang</span>
+                                    </div>
+                                    <ChevronRight className="size-3.5 text-[#94A3B8] group-hover:text-[#047857] transition-colors" />
+                                </Link>
+                            </>
+                        ) : (
+                            <>
+                                <Link
+                                    href="/products/create"
+                                    className="flex items-center justify-between p-3 rounded-lg border border-[#E2E8F0] hover:border-[#047857] hover:bg-[#ECFDF5]/50 transition-all group"
+                                >
+                                    <div className="flex items-center gap-2.5">
+                                        <Plus className="size-4 text-[#047857]" />
+                                        <span className="text-xs font-semibold text-[#0F172A]">Tambah Produk</span>
+                                    </div>
+                                    <ChevronRight className="size-3.5 text-[#94A3B8] group-hover:text-[#047857] transition-colors" />
+                                </Link>
+
+                                <Link
+                                    href="/purchases/create"
+                                    className="flex items-center justify-between p-3 rounded-lg border border-[#E2E8F0] hover:border-[#047857] hover:bg-[#ECFDF5]/50 transition-all group"
+                                >
+                                    <div className="flex items-center gap-2.5">
+                                        <Truck className="size-4 text-[#047857]" />
+                                        <span className="text-xs font-semibold text-[#0F172A]">Catat Pembelian</span>
+                                    </div>
+                                    <ChevronRight className="size-3.5 text-[#94A3B8] group-hover:text-[#047857] transition-colors" />
+                                </Link>
+
+                                <Link
+                                    href="/stock-opnames/create"
+                                    className="flex items-center justify-between p-3 rounded-lg border border-[#E2E8F0] hover:border-[#047857] hover:bg-[#ECFDF5]/50 transition-all group"
+                                >
+                                    <div className="flex items-center gap-2.5">
+                                        <ClipboardCheck className="size-4 text-[#047857]" />
+                                        <span className="text-xs font-semibold text-[#0F172A]">Stock Opname</span>
+                                    </div>
+                                    <ChevronRight className="size-3.5 text-[#94A3B8] group-hover:text-[#047857] transition-colors" />
+                                </Link>
+                            </>
+                        )}
                     </div>
                 </div>
 
@@ -446,14 +509,16 @@ export default function Dashboard({
                                         </div>
                                     );
                                 })}
-                                <div className="p-3 bg-[#F8FAFC] text-center border-t border-[#E2E8F0]">
-                                    <Button asChild size="sm" variant="outline" className="w-full text-xs font-semibold">
-                                        <Link href="/purchases/create">
-                                            <Truck className="size-3.5 mr-1 text-[#047857]" />
-                                            Restock Lewat Pembelian
-                                        </Link>
-                                    </Button>
-                                </div>
+                                {!isCashier && (
+                                    <div className="p-3 bg-[#F8FAFC] text-center border-t border-[#E2E8F0]">
+                                        <Button asChild size="sm" variant="outline" className="w-full text-xs font-semibold">
+                                            <Link href="/purchases/create">
+                                                <Truck className="size-3.5 mr-1 text-[#047857]" />
+                                                Restock Lewat Pembelian
+                                            </Link>
+                                        </Button>
+                                    </div>
+                                )}
                             </div>
                         )}
                     </div>

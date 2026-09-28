@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Head, Link, router, useForm } from '@inertiajs/react';
+import { Head, Link, router, useForm, usePage } from '@inertiajs/react';
 import {
     Boxes,
     Package,
@@ -79,6 +79,11 @@ export default function InventoryIndex({
     metrics,
     filters,
 }: InventoryProps) {
+    const { auth } = usePage().props as { auth: { user: { role: string } } };
+    const role = auth?.user?.role || 'owner';
+    const isOwner = role === 'owner';
+    const canManage = ['owner', 'admin'].includes(role);
+
     const [search, setSearch] = useState(filters.search || '');
     const [categoryId, setCategoryId] = useState(filters.category_id || 'all');
     const [stockStatus, setStockStatus] = useState(filters.stock_status || 'all');
@@ -162,20 +167,22 @@ export default function InventoryIndex({
                             Pantau pergerakan fisik barang, stok menipis, dan penyesuaian inventori
                         </p>
                     </div>
-                    <div className="flex flex-wrap items-center gap-2">
-                        <Button variant="outline" asChild className="text-xs h-9">
-                            <Link href="/inventory/movements">
-                                <History className="size-4 mr-1.5 text-[#2563EB]" />
-                                Riwayat Pergerakan
-                            </Link>
-                        </Button>
-                        <Button asChild className="bg-[#047857] hover:bg-[#065F46] text-white text-xs h-9 font-semibold">
-                            <Link href="/stock-opnames">
-                                <ClipboardCheck className="size-4 mr-1.5" />
-                                Stock Opname
-                            </Link>
-                        </Button>
-                    </div>
+                    {canManage && (
+                        <div className="flex flex-wrap items-center gap-2">
+                            <Button variant="outline" asChild className="text-xs h-9">
+                                <Link href="/inventory/movements">
+                                    <History className="size-4 mr-1.5 text-[#2563EB]" />
+                                    Riwayat Pergerakan
+                                </Link>
+                            </Button>
+                            <Button asChild className="bg-[#047857] hover:bg-[#065F46] text-white text-xs h-9 font-semibold">
+                                <Link href="/stock-opnames">
+                                    <ClipboardCheck className="size-4 mr-1.5" />
+                                    Stock Opname
+                                </Link>
+                            </Button>
+                        </div>
+                    )}
                 </div>
 
                 {/* KPI Metrics */}
@@ -341,15 +348,19 @@ export default function InventoryIndex({
                                                     <StatusBadge status={status} />
                                                 </td>
                                                 <td className="px-4 py-3 text-center">
-                                                    <Button
-                                                        variant="outline"
-                                                        size="sm"
-                                                        onClick={() => openAdjustModal(p)}
-                                                        className="h-8 text-xs font-medium text-[#047857] border-[#A7F3D0] hover:bg-[#ECFDF5]"
-                                                    >
-                                                        <SlidersHorizontal className="size-3.5 mr-1" />
-                                                        Sesuaikan
-                                                    </Button>
+                                                    {isOwner ? (
+                                                        <Button
+                                                            variant="outline"
+                                                            size="sm"
+                                                            onClick={() => openAdjustModal(p)}
+                                                            className="h-8 text-xs font-medium text-[#047857] border-[#A7F3D0] hover:bg-[#ECFDF5]"
+                                                        >
+                                                            <SlidersHorizontal className="size-3.5 mr-1" />
+                                                            Sesuaikan
+                                                        </Button>
+                                                    ) : (
+                                                        <span className="text-xs text-[#94A3B8]">-</span>
+                                                    )}
                                                 </td>
                                             </tr>
                                         );

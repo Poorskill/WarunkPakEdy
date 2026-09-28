@@ -12,6 +12,10 @@ class StoreSettingController extends Controller
 {
     public function index(): Response
     {
+        if (! auth()->user()?->isOwner()) {
+            abort(403, 'Hanya Owner yang dapat mengakses pengaturan toko.');
+        }
+
         $settings = [
             'store_name' => Setting::get('store_name', 'WarunkPakEdy'),
             'store_phone' => Setting::get('store_phone', '0812-3456-7890'),

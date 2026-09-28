@@ -35,6 +35,10 @@ class ReportController extends Controller
 
     public function sales(Request $request): Response
     {
+        if (! in_array($request->user()?->role, ['owner', 'admin'], true)) {
+            abort(403, 'Laporan penjualan hanya dapat diakses oleh Owner dan Admin.');
+        }
+
         [$start, $end, $startDateStr, $endDateStr] = $this->parseDateRange($request);
 
         $salesQuery = Sale::whereBetween('sale_date', [$start, $end])
@@ -96,6 +100,10 @@ class ReportController extends Controller
 
     public function stock(Request $request): Response
     {
+        if (! in_array($request->user()?->role, ['owner', 'admin'], true)) {
+            abort(403, 'Laporan stok hanya dapat diakses oleh Owner dan Admin.');
+        }
+
         [$start, $end, $startDateStr, $endDateStr] = $this->parseDateRange($request);
         $categoryId = $request->input('category_id', '');
         $stockStatus = $request->input('stock_status', '');
@@ -150,6 +158,10 @@ class ReportController extends Controller
 
     public function profit(Request $request): Response
     {
+        if (! $request->user()?->isOwner()) {
+            abort(403, 'Laporan Keuntungan hanya dapat diakses oleh Owner.');
+        }
+
         [$start, $end, $startDateStr, $endDateStr] = $this->parseDateRange($request);
 
         $sales = Sale::with(['items.product'])

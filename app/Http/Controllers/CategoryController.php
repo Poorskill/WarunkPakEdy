@@ -45,6 +45,10 @@ class CategoryController extends Controller
 
     public function destroy(Category $category): RedirectResponse
     {
+        if (! auth()->user()?->isOwner()) {
+            abort(403, 'Hanya Owner yang dapat menghapus kategori.');
+        }
+
         if ($category->products()->exists()) {
             return redirect()->route('categories.index')
                 ->with('error', 'Kategori tidak dapat dihapus karena masih memiliki produk.');

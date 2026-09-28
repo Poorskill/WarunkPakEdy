@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Head, router, useForm } from '@inertiajs/react';
+import { Head, router, useForm, usePage } from '@inertiajs/react';
 import { Plus, Pencil, Trash2, FolderTree } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -42,6 +42,11 @@ export default function CategoriesIndex({
     categories = { data: [], links: [], from: 0, to: 0, total: 0 },
     filters = { search: '' },
 }: CategoriesProps) {
+    const { auth } = usePage().props as { auth: { user: { role: string } } };
+    const role = auth?.user?.role || 'owner';
+    const isOwner = role === 'owner';
+    const canManage = ['owner', 'admin'].includes(role);
+
     const [search, setSearch] = useState(filters?.search || '');
     const [isCreateOpen, setIsCreateOpen] = useState(false);
     const [editingCategory, setEditingCategory] = useState<Category | null>(
@@ -127,13 +132,15 @@ export default function CategoriesIndex({
                             Kelola kategori produk toko
                         </p>
                     </div>
-                    <Button
-                        onClick={() => setIsCreateOpen(true)}
-                        className="bg-[#047857] font-semibold text-white hover:bg-[#065F46]"
-                    >
-                        <Plus className="mr-1.5 size-4" />
-                        Tambah Kategori
-                    </Button>
+                    {canManage && (
+                        <Button
+                            onClick={() => setIsCreateOpen(true)}
+                            className="bg-[#047857] font-semibold text-white hover:bg-[#065F46]"
+                        >
+                            <Plus className="mr-1.5 size-4" />
+                            Tambah Kategori
+                        </Button>
+                    )}
                 </div>
 
                 <div className="rounded-lg border border-[#E2E8F0] bg-white">
@@ -198,30 +205,36 @@ export default function CategoriesIndex({
                                                 {cat.products_count}
                                             </td>
                                             <td className="px-4 py-3 text-center">
-                                                <div className="flex items-center justify-center gap-1">
-                                                    <button
-                                                        type="button"
-                                                        onClick={() =>
-                                                            openEdit(cat)
-                                                        }
-                                                        className="p-1 text-[#64748B] transition-colors hover:text-[#047857]"
-                                                        title="Edit"
-                                                    >
-                                                        <Pencil className="size-4" />
-                                                    </button>
-                                                    <button
-                                                        type="button"
-                                                        onClick={() =>
-                                                            setDeletingCategory(
-                                                                cat,
-                                                            )
-                                                        }
-                                                        className="p-1 text-[#64748B] transition-colors hover:text-[#DC2626]"
-                                                        title="Hapus"
-                                                    >
-                                                        <Trash2 className="size-4" />
-                                                    </button>
-                                                </div>
+                                                {canManage ? (
+                                                    <div className="flex items-center justify-center gap-1">
+                                                        <button
+                                                            type="button"
+                                                            onClick={() =>
+                                                                openEdit(cat)
+                                                            }
+                                                            className="p-1 text-[#64748B] transition-colors hover:text-[#047857]"
+                                                            title="Edit"
+                                                        >
+                                                            <Pencil className="size-4" />
+                                                        </button>
+                                                        {isOwner && (
+                                                            <button
+                                                                type="button"
+                                                                onClick={() =>
+                                                                    setDeletingCategory(
+                                                                        cat,
+                                                                    )
+                                                                }
+                                                                className="p-1 text-[#64748B] transition-colors hover:text-[#DC2626]"
+                                                                title="Hapus"
+                                                            >
+                                                                <Trash2 className="size-4" />
+                                                            </button>
+                                                        )}
+                                                    </div>
+                                                ) : (
+                                                    <span className="text-xs text-[#94A3B8]">-</span>
+                                                )}
                                             </td>
                                         </tr>
                                     ))}

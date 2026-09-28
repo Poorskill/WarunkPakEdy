@@ -123,6 +123,10 @@ class ProductController extends Controller
 
     public function destroy(Product $product): RedirectResponse
     {
+        if (! Auth::user()?->isOwner()) {
+            abort(403, 'Hanya Owner yang dapat menghapus produk.');
+        }
+
         if ($product->image_path && Storage::disk('public')->exists($product->image_path)) {
             Storage::disk('public')->delete($product->image_path);
         }

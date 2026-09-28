@@ -16,6 +16,10 @@ class UserController extends Controller
 {
     public function index(Request $request): Response
     {
+        if (! $request->user()?->isOwner()) {
+            abort(403, 'Hanya Owner yang dapat mengakses manajemen pengguna.');
+        }
+
         $search = $request->input('search', '');
         $role = $request->input('role', '');
 
@@ -58,6 +62,11 @@ class UserController extends Controller
     {
         $data = $request->validated();
 
+        // User tidak boleh mengubah role akunnya sendiri
+        if ($user->id === Auth::id() && isset($data['role']) && $data['role'] !== $user->role) {
+            return redirect()->back()->with('error', 'Anda tidak dapat mengubah role akun Anda sendiri.');
+        }
+
         if (! empty($data['password'])) {
             $data['password'] = Hash::make($data['password']);
         } else {
@@ -94,6 +103,10 @@ class UserController extends Controller
 
     public function destroy(User $user): RedirectResponse
     {
+        if (! Auth::user()?->isOwner()) {
+            abort(403, 'Hanya Owner yang dapat menghapus pengguna.');
+        }
+
         if ($user->id === Auth::id()) {
             return redirect()->back()->with('error', 'Anda tidak dapat menghapus akun Anda sendiri.');
         }

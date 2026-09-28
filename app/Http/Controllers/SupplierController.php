@@ -49,6 +49,10 @@ class SupplierController extends Controller
 
     public function destroy(Supplier $supplier): RedirectResponse
     {
+        if (! auth()->user()?->isOwner()) {
+            abort(403, 'Hanya Owner yang dapat menghapus data supplier.');
+        }
+
         if ($supplier->purchases()->exists()) {
             $supplier->update(['is_active' => false]);
             $supplier->delete();

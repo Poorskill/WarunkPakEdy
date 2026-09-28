@@ -14,24 +14,29 @@ class DashboardController extends Controller
 {
     public function index(Request $request): Response
     {
+        $user = $request->user();
         $today = now()->startOfDay();
 
-        // 1. Today sales & transactions
+        // 1. Today sales & transactions (filtered for Cashier)
         $todaySalesQuery = Sale::with('items.product')
             ->where('sale_date', '>=', $today)
-            ->where('status', 'completed');
+            ->where('status', 'completed')
+            ->when($user->isCashier(), fn ($q) => $q->where('user_id', $user->id));
 
         $todaySales = (float) $todaySalesQuery->sum('total');
         $todayTransactionsCount = $todaySalesQuery->count();
 
-        // 2. Today gross profit
-        $todayCogs = 0;
-        foreach ($todaySalesQuery->get() as $sale) {
-            foreach ($sale->items as $item) {
-                $todayCogs += ((float) $item->quantity * (float) ($item->product->purchase_price ?? 0));
+        // 2. Today gross profit (ONLY for Owner)
+        $todayProfit = 0;
+        if ($user->isOwner()) {
+            $todayCogs = 0;
+            foreach ($todaySalesQuery->get() as $sale) {
+                foreach ($sale->items as $item) {
+                    $todayCogs += ((float) $item->quantity * (float) ($item->product->purchase_price ?? 0));
+                }
             }
+            $todayProfit = max(0, $todaySales - $todayCogs);
         }
-        $todayProfit = max(0, $todaySales - $todayCogs);
 
         // 3. General counts
         $totalProductsCount = Product::count();
@@ -48,12 +53,13 @@ class DashboardController extends Controller
 
         // 5. Recent completed sales
         $recentSales = Sale::with(['user', 'customer', 'items'])
+            ->when($user->isCashier(), fn ($q) => $q->where('user_id', $user->id))
             ->orderBy('sale_date', 'desc')
             ->limit(5)
             ->get();
 
-        // 6. Recent stock movements
-        $recentMovements = StockMovement::with(['product', 'user'])
+        // 6. Recent stock movements (Owner & Admin only, Cashier gets empty)
+        $recentMovements = $user->isCashier() ? [] : StockMovement::with(['product', 'user'])
             ->orderBy('created_at', 'desc')
             ->limit(5)
             ->get();
@@ -62,6 +68,7 @@ class DashboardController extends Controller
         $sevenDaysAgo = now()->subDays(6)->startOfDay();
         $pastSales = Sale::whereBetween('sale_date', [$sevenDaysAgo, now()->endOfDay()])
             ->where('status', 'completed')
+            ->when($user->isCashier(), fn ($q) => $q->where('user_id', $user->id))
             ->get();
 
         $dayNames = [

@@ -76,30 +76,33 @@ export function AppSidebar() {
     const { auth } = usePage().props;
     const role = auth.user?.role || 'owner';
 
-    // Role-based navigation filtering according to DESIGN.md Section 43
+    // Role-based navigation filtering according to DESIGN.md Section 43 & Access Matrix
     const filteredGroups: NavGroup[] = baseNavGroups
         .map((group) => {
             if (group.label === 'Sistem') {
+                // Hanya Owner yang boleh mengakses menu Sistem (Pengguna & Pengaturan Toko)
                 if (role === 'owner') return group;
-                if (role === 'admin') {
-                    return {
-                        ...group,
-                        items: group.items.filter((item) => item.href !== '/users'),
-                    };
-                }
                 return null;
             }
 
             if (group.label === 'Laporan') {
                 if (role === 'cashier') return null;
+                if (role === 'admin') {
+                    // Admin hanya laporan operasional penjualan & stok (bukan laba/keuntungan)
+                    return {
+                        ...group,
+                        items: group.items.filter((item) => item.href !== '/reports/profit'),
+                    };
+                }
                 return group;
             }
 
             if (group.label === 'Toko') {
                 if (role === 'cashier') {
+                    // Kasir hanya melihat Produk dan Pelanggan/Member
                     return {
                         ...group,
-                        items: group.items.filter((item) => item.href === '/customers'),
+                        items: group.items.filter((item) => typeof item.href === 'string' && ['/products', '/customers'].includes(item.href)),
                     };
                 }
                 return group;
