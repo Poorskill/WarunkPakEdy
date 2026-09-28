@@ -8,6 +8,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -41,6 +42,12 @@ class UserController extends Controller
         $data = $request->validated();
         $data['password'] = Hash::make($data['password']);
 
+        if ($request->hasFile('photo')) {
+            $data['avatar_path'] = $request->file('photo')->store('profile', 'public');
+        }
+
+        unset($data['photo'], $data['remove_photo']);
+
         User::create($data);
 
         return redirect()->route('users.index')
@@ -65,6 +72,20 @@ class UserController extends Controller
             }
         }
 
+        if ($request->boolean('remove_photo')) {
+            if ($user->avatar_path && Storage::disk('public')->exists($user->avatar_path)) {
+                Storage::disk('public')->delete($user->avatar_path);
+            }
+            $data['avatar_path'] = null;
+        } elseif ($request->hasFile('photo')) {
+            if ($user->avatar_path && Storage::disk('public')->exists($user->avatar_path)) {
+                Storage::disk('public')->delete($user->avatar_path);
+            }
+            $data['avatar_path'] = $request->file('photo')->store('profile', 'public');
+        }
+
+        unset($data['photo'], $data['remove_photo']);
+
         $user->update($data);
 
         return redirect()->route('users.index')
@@ -82,6 +103,10 @@ class UserController extends Controller
             if ($otherOwners === 0) {
                 return redirect()->back()->with('error', 'Tidak dapat menghapus Owner terakhir.');
             }
+        }
+
+        if ($user->avatar_path && Storage::disk('public')->exists($user->avatar_path)) {
+            Storage::disk('public')->delete($user->avatar_path);
         }
 
         $user->delete();

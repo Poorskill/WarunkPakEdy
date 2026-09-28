@@ -1,6 +1,6 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { Head, router, useForm, usePage } from '@inertiajs/react';
-import { Plus, Pencil, Trash2, Users, ShieldCheck, ShieldAlert, Shield } from 'lucide-react';
+import { Plus, Pencil, Trash2, Users, ShieldCheck, ShieldAlert, Shield, Camera } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -87,19 +87,39 @@ export default function UsersIndex({ users, filters }: UsersIndexProps) {
     const [isCreateOpen, setIsCreateOpen] = useState(false);
     const [editingUser, setEditingUser] = useState<UserItem | null>(null);
     const [deletingUser, setDeletingUser] = useState<UserItem | null>(null);
+    const createFileInputRef = useRef<HTMLInputElement>(null);
+    const editFileInputRef = useRef<HTMLInputElement>(null);
+    const [createPreview, setCreatePreview] = useState<string | null>(null);
+    const [editPreview, setEditPreview] = useState<string | null>(null);
 
-    const createForm = useForm({
+    const createForm = useForm<{
+        name: string;
+        email: string;
+        password: string;
+        role: string;
+        photo: File | null;
+    }>({
         name: '',
         email: '',
         password: '',
         role: 'cashier',
+        photo: null,
     });
 
-    const editForm = useForm({
+    const editForm = useForm<{
+        name: string;
+        email: string;
+        password: string;
+        role: string;
+        photo: File | null;
+        remove_photo: boolean;
+    }>({
         name: '',
         email: '',
         password: '',
         role: 'cashier',
+        photo: null,
+        remove_photo: false,
     });
 
     const applyFilters = (newSearch: string, newRole: string) => {
@@ -126,9 +146,12 @@ export default function UsersIndex({ users, filters }: UsersIndexProps) {
     const handleCreate = (e: React.FormEvent) => {
         e.preventDefault();
         createForm.post('/users', {
+            forceFormData: true,
             onSuccess: () => {
                 setIsCreateOpen(false);
+                setCreatePreview(null);
                 createForm.reset();
+                if (createFileInputRef.current) createFileInputRef.current.value = '';
                 toast.success('Pengguna baru berhasil ditambahkan');
             },
         });
@@ -136,26 +159,37 @@ export default function UsersIndex({ users, filters }: UsersIndexProps) {
 
     const openEdit = (u: UserItem) => {
         setEditingUser(u);
+        setEditPreview(null);
         editForm.setData({
             name: u.name,
             email: u.email,
             password: '',
             role: u.role,
+            photo: null,
+            remove_photo: false,
         });
+        if (editFileInputRef.current) editFileInputRef.current.value = '';
     };
 
     const handleEdit = (e: React.FormEvent) => {
         e.preventDefault();
         if (!editingUser) return;
-        editForm.put(`/users/${editingUser.id}`, {
+        editForm.transform((data) => ({
+            ...data,
+            _method: 'put',
+        }));
+        editForm.post(`/users/${editingUser.id}`, {
+            forceFormData: true,
             onSuccess: () => {
                 setEditingUser(null);
+                setEditPreview(null);
                 editForm.reset();
+                if (editFileInputRef.current) editFileInputRef.current.value = '';
                 toast.success('Data pengguna berhasil diperbarui');
             },
-            onError: (err) => {
+            onError: (err: Record<string, string>) => {
                 const msg = Object.values(err)[0] || 'Gagal memperbarui pengguna.';
-                toast.error(msg as string);
+                toast.error(msg);
             },
         });
     };
@@ -355,6 +389,70 @@ export default function UsersIndex({ users, filters }: UsersIndexProps) {
                     </DialogHeader>
                     <form onSubmit={handleCreate} className="space-y-4 pt-2">
                         <div>
+                            <Label>Foto Profile</Label>
+                            <div className="mt-1 flex items-center gap-3">
+                                <Avatar className="size-14 border border-[#E2E8F0]">
+                                    {createPreview ? (
+                                        <AvatarImage src={createPreview} className="object-cover" />
+                                    ) : null}
+                                    <AvatarFallback className="bg-[#ECFDF5] text-[#047857] text-sm font-bold">
+                                        {getInitials(createForm.data.name || 'User')}
+                                    </AvatarFallback>
+                                </Avatar>
+                                <div className="space-y-1">
+                                    <input
+                                        ref={createFileInputRef}
+                                        type="file"
+                                        accept="image/jpeg,image/png,image/webp,image/jpg"
+                                        className="hidden"
+                                        onChange={(e) => {
+                                            const file = e.target.files?.[0];
+                                            if (file) {
+                                                if (file.size > 2 * 1024 * 1024) {
+                                                    toast.error('Ukuran file maksimal 2MB.');
+                                                    return;
+                                                }
+                                                createForm.setData('photo', file);
+                                                setCreatePreview(URL.createObjectURL(file));
+                                            }
+                                        }}
+                                    />
+                                    <div className="flex items-center gap-2">
+                                        <Button
+                                            type="button"
+                                            variant="outline"
+                                            size="sm"
+                                            onClick={() => createFileInputRef.current?.click()}
+                                            className="text-xs h-8 gap-1.5"
+                                        >
+                                            <Camera className="size-3.5" />
+                                            {createPreview ? 'Ganti Foto' : 'Pilih Foto'}
+                                        </Button>
+                                        {createPreview && (
+                                            <Button
+                                                type="button"
+                                                variant="ghost"
+                                                size="sm"
+                                                onClick={() => {
+                                                    createForm.setData('photo', null);
+                                                    setCreatePreview(null);
+                                                    if (createFileInputRef.current) createFileInputRef.current.value = '';
+                                                }}
+                                                className="text-xs h-8 text-[#DC2626] hover:bg-[#FEF2F2] hover:text-[#DC2626]"
+                                            >
+                                                Hapus
+                                            </Button>
+                                        )}
+                                    </div>
+                                    <p className="text-[11px] text-[#94A3B8]">JPG, PNG, WebP maks 2MB</p>
+                                </div>
+                            </div>
+                            {createForm.errors.photo && (
+                                <p className="text-xs text-[#DC2626] mt-1">{createForm.errors.photo}</p>
+                            )}
+                        </div>
+
+                        <div>
                             <Label htmlFor="create-user-name">Nama Lengkap *</Label>
                             <Input
                                 id="create-user-name"
@@ -451,6 +549,79 @@ export default function UsersIndex({ users, filters }: UsersIndexProps) {
                         </DialogDescription>
                     </DialogHeader>
                     <form onSubmit={handleEdit} className="space-y-4 pt-2">
+                        <div>
+                            <Label>Foto Profile</Label>
+                            <div className="mt-1 flex items-center gap-3">
+                                <Avatar className="size-14 border border-[#E2E8F0]">
+                                    <AvatarImage
+                                        src={editPreview || (editForm.data.remove_photo ? undefined : editingUser?.avatar)}
+                                        className="object-cover"
+                                    />
+                                    <AvatarFallback className="bg-[#ECFDF5] text-[#047857] text-sm font-bold">
+                                        {getInitials(editForm.data.name || 'User')}
+                                    </AvatarFallback>
+                                </Avatar>
+                                <div className="space-y-1">
+                                    <input
+                                        ref={editFileInputRef}
+                                        type="file"
+                                        accept="image/jpeg,image/png,image/webp,image/jpg"
+                                        className="hidden"
+                                        onChange={(e) => {
+                                            const file = e.target.files?.[0];
+                                            if (file) {
+                                                if (file.size > 2 * 1024 * 1024) {
+                                                    toast.error('Ukuran file maksimal 2MB.');
+                                                    return;
+                                                }
+                                                editForm.setData((prev) => ({
+                                                    ...prev,
+                                                    photo: file,
+                                                    remove_photo: false,
+                                                }));
+                                                setEditPreview(URL.createObjectURL(file));
+                                            }
+                                        }}
+                                    />
+                                    <div className="flex items-center gap-2">
+                                        <Button
+                                            type="button"
+                                            variant="outline"
+                                            size="sm"
+                                            onClick={() => editFileInputRef.current?.click()}
+                                            className="text-xs h-8 gap-1.5"
+                                        >
+                                            <Camera className="size-3.5" />
+                                            {editPreview || (!editForm.data.remove_photo && editingUser?.avatar) ? 'Ganti Foto' : 'Pilih Foto'}
+                                        </Button>
+                                        {(editPreview || (!editForm.data.remove_photo && editingUser?.avatar)) && (
+                                            <Button
+                                                type="button"
+                                                variant="ghost"
+                                                size="sm"
+                                                onClick={() => {
+                                                    editForm.setData((prev) => ({
+                                                        ...prev,
+                                                        photo: null,
+                                                        remove_photo: true,
+                                                    }));
+                                                    setEditPreview(null);
+                                                    if (editFileInputRef.current) editFileInputRef.current.value = '';
+                                                }}
+                                                className="text-xs h-8 text-[#DC2626] hover:bg-[#FEF2F2] hover:text-[#DC2626]"
+                                            >
+                                                Hapus
+                                            </Button>
+                                        )}
+                                    </div>
+                                    <p className="text-[11px] text-[#94A3B8]">JPG, PNG, WebP maks 2MB</p>
+                                </div>
+                            </div>
+                            {editForm.errors.photo && (
+                                <p className="text-xs text-[#DC2626] mt-1">{editForm.errors.photo}</p>
+                            )}
+                        </div>
+
                         <div>
                             <Label htmlFor="edit-user-name">Nama Lengkap *</Label>
                             <Input

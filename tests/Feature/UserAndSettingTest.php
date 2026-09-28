@@ -6,6 +6,8 @@ use App\Models\Setting;
 use App\Models\User;
 use Database\Seeders\DatabaseSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;
 
 class UserAndSettingTest extends TestCase
@@ -49,6 +51,37 @@ class UserAndSettingTest extends TestCase
             'email' => 'karyawan@warunkpakedy.test',
             'role' => 'cashier',
         ]);
+    }
+
+    public function test_owner_can_create_user_with_photo_and_update_it(): void
+    {
+        Storage::fake('public');
+        $photo = UploadedFile::fake()->image('staff.jpg');
+
+        $response = $this->actingAs($this->owner)->post('/users', [
+            'name' => 'Staff Foto',
+            'email' => 'staff.foto@warunkpakedy.test',
+            'password' => 'secret123',
+            'role' => 'cashier',
+            'photo' => $photo,
+        ]);
+
+        $response->assertRedirect('/users');
+        $createdUser = User::where('email', 'staff.foto@warunkpakedy.test')->first();
+        $this->assertNotNull($createdUser->avatar_path);
+        Storage::disk('public')->assertExists($createdUser->avatar_path);
+
+        // Update to remove photo
+        $updateResponse = $this->actingAs($this->owner)->put("/users/{$createdUser->id}", [
+            'name' => 'Staff Foto Updated',
+            'email' => $createdUser->email,
+            'role' => 'cashier',
+            'remove_photo' => true,
+        ]);
+
+        $updateResponse->assertRedirect('/users');
+        $createdUser->refresh();
+        $this->assertNull($createdUser->avatar_path);
     }
 
     public function test_owner_can_update_user_and_change_role(): void

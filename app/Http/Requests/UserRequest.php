@@ -21,6 +21,8 @@ class UserRequest extends FormRequest
             'email' => ['required', 'email', 'max:255', Rule::unique('users', 'email')->ignore($userId)],
             'role' => ['required', 'in:owner,admin,cashier'],
             'password' => [$userId ? 'nullable' : 'required', 'string', 'min:8'],
+            'photo' => ['nullable', 'image', 'mimes:jpeg,jpg,png,webp', 'max:2048'],
+            'remove_photo' => ['nullable', 'boolean'],
         ];
     }
 
@@ -33,6 +35,9 @@ class UserRequest extends FormRequest
             'role.required' => 'Role pengguna wajib dipilih.',
             'password.required' => 'Password wajib diisi untuk pengguna baru.',
             'password.min' => 'Password minimal terdiri dari 8 karakter.',
+            'photo.image' => 'File foto harus berupa gambar.',
+            'photo.mimes' => 'Format foto hanya diperbolehkan JPG, JPEG, PNG, atau WebP.',
+            'photo.max' => 'Ukuran foto maksimal adalah 2MB.',
         ];
     }
 }
