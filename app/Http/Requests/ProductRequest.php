@@ -22,6 +22,8 @@ class ProductRequest extends FormRequest
             'stock' => ['required', 'numeric', 'min:0'],
             'minimum_stock' => ['required', 'numeric', 'min:0'],
             'unit' => ['required', 'string', 'max:50'],
+            'image' => ['nullable', 'image', 'mimes:jpeg,png,jpg,webp', 'max:2048'],
+            'remove_image' => ['nullable', 'boolean'],
             'is_active' => ['boolean'],
         ];
     }

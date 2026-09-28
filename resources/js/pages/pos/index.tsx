@@ -51,6 +51,7 @@ interface Product {
     stock: string;
     minimum_stock: string;
     unit: string;
+    image_url?: string | null;
     category: Category | null;
 }
 
@@ -597,10 +598,21 @@ export default function PosIndex({
                                                 )}
                                             </div>
 
-                                            {/* Product Title */}
-                                            <h4 className="text-xs font-semibold text-[#0F172A] line-clamp-2 leading-snug group-hover:text-[#047857]">
-                                                {product.name}
-                                            </h4>
+                                            {/* Product Title & Image */}
+                                            <div className="flex gap-2.5">
+                                                {product.image_url && (
+                                                    <img
+                                                        src={product.image_url}
+                                                        alt={product.name}
+                                                        className="size-11 rounded-md object-cover border border-[#E2E8F0] shrink-0"
+                                                    />
+                                                )}
+                                                <div className="flex-1 min-w-0">
+                                                    <h4 className="text-xs font-semibold text-[#0F172A] line-clamp-2 leading-snug group-hover:text-[#047857]">
+                                                        {product.name}
+                                                    </h4>
+                                                </div>
+                                            </div>
 
                                             {/* Price */}
                                             <div className="mt-auto pt-2">

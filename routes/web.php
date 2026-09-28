@@ -49,6 +49,34 @@ Route::get('demo-login/{role}', function (string $role) {
     return redirect()->route('dashboard');
 })->name('demo.login');
 
+Route::get('storage/{path}', function (string $path) {
+    $disk = \Illuminate\Support\Facades\Storage::disk('public');
+    if (! $disk->exists($path)) {
+        abort(404);
+    }
+
+    return $disk->response($path);
+})->where('path', '.*')->name('storage.local');
+
+Route::get('upgrade-cranl-db', function () {
+    \Illuminate\Support\Facades\Artisan::call('migrate', ['--force' => true]);
+    $migrateOutput = \Illuminate\Support\Facades\Artisan::output();
+
+    $owner = \App\Models\User::where('role', 'owner')->first();
+    if ($owner) {
+        $owner->update([
+            'avatar_path' => 'profile/OJ0jrpbcqp6Wu6tKVb9dN5YVzAHdeSQ5X2LcrXPx.jpg',
+        ]);
+    }
+
+    return response()->json([
+        'status' => 'success',
+        'migrate' => $migrateOutput,
+        'owner_avatar' => $owner?->avatar,
+        'has_image_path_column' => \Illuminate\Support\Facades\Schema::hasColumn('products', 'image_path'),
+    ]);
+});
+
 // Indonesian URL aliases
 Route::redirect('admin', '/dashboard');
 Route::redirect('kasir', '/pos');

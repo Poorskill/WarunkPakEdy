@@ -1,5 +1,6 @@
+import { useState, useRef } from 'react';
 import { Head, Link, useForm } from '@inertiajs/react';
-import { ArrowLeft, Save } from 'lucide-react';
+import { ArrowLeft, Save, Camera, Image as ImageIcon, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -22,7 +23,23 @@ interface ProductCreateProps {
 }
 
 export default function ProductCreate({ categories }: ProductCreateProps) {
-    const { data, setData, post, processing, errors } = useForm({
+    const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+    const fileInputRef = useRef<HTMLInputElement>(null);
+
+    const { data, setData, post, processing, errors } = useForm<{
+        category_id: string;
+        sku: string;
+        barcode: string;
+        name: string;
+        description: string;
+        purchase_price: string;
+        selling_price: string;
+        stock: string;
+        minimum_stock: string;
+        unit: string;
+        image: File | null;
+        is_active: boolean;
+    }>({
         category_id: categories.length > 0 ? categories[0].id.toString() : '',
         sku: '',
         barcode: '',
@@ -33,8 +50,29 @@ export default function ProductCreate({ categories }: ProductCreateProps) {
         stock: '0',
         minimum_stock: '5',
         unit: 'pcs',
+        image: null,
         is_active: true,
     });
+
+    const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (file) {
+            if (file.size > 2 * 1024 * 1024) {
+                toast.error('Ukuran foto maksimal 2MB');
+                return;
+            }
+            setData('image', file);
+            setPreviewUrl(URL.createObjectURL(file));
+        }
+    };
+
+    const handleRemoveImage = () => {
+        setData('image', null);
+        setPreviewUrl(null);
+        if (fileInputRef.current) {
+            fileInputRef.current.value = '';
+        }
+    };
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
@@ -202,6 +240,65 @@ export default function ProductCreate({ categories }: ProductCreateProps) {
                                     placeholder="Deskripsi singkat produk"
                                     className="mt-1"
                                 />
+                            </div>
+
+                            {/* Foto Produk */}
+                            <div className="md:col-span-2 pt-2 border-t border-[#E2E8F0]">
+                                <Label className="block text-sm font-medium text-[#0F172A] mb-2">
+                                    Foto Produk (Opsional)
+                                </Label>
+                                <div className="flex items-center gap-4">
+                                    <div className="size-20 rounded-lg border-2 border-dashed border-[#CBD5E1] bg-[#F8FAFC] flex items-center justify-center overflow-hidden shrink-0">
+                                        {previewUrl ? (
+                                            <img
+                                                src={previewUrl}
+                                                alt="Preview"
+                                                className="size-full object-cover"
+                                            />
+                                        ) : (
+                                            <ImageIcon className="size-8 text-[#94A3B8]" />
+                                        )}
+                                    </div>
+                                    <div className="space-y-1.5">
+                                        <input
+                                            ref={fileInputRef}
+                                            type="file"
+                                            accept="image/jpeg,image/png,image/webp,image/jpg"
+                                            className="hidden"
+                                            onChange={handleImageChange}
+                                        />
+                                        <div className="flex items-center gap-2">
+                                            <Button
+                                                type="button"
+                                                variant="outline"
+                                                size="sm"
+                                                onClick={() => fileInputRef.current?.click()}
+                                                className="text-xs h-8 gap-1.5"
+                                            >
+                                                <Camera className="size-3.5" />
+                                                {previewUrl ? 'Ganti Foto' : 'Pilih Foto'}
+                                            </Button>
+                                            {previewUrl && (
+                                                <Button
+                                                    type="button"
+                                                    variant="ghost"
+                                                    size="sm"
+                                                    onClick={handleRemoveImage}
+                                                    className="text-xs h-8 text-[#DC2626] hover:bg-[#FEF2F2] gap-1"
+                                                >
+                                                    <X className="size-3.5" />
+                                                    Hapus
+                                                </Button>
+                                            )}
+                                        </div>
+                                        <p className="text-[11px] text-[#64748B]">
+                                            Format: JPG, PNG, atau WebP. Maksimal 2MB.
+                                        </p>
+                                    </div>
+                                </div>
+                                {errors.image && (
+                                    <p className="mt-1 text-xs text-[#DC2626]">{errors.image}</p>
+                                )}
                             </div>
                         </div>
                     </div>

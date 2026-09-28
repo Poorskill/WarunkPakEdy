@@ -10,6 +10,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -63,6 +64,10 @@ class ProductController extends Controller
             $data = $request->validated();
             $initialStock = $data['stock'];
 
+            if ($request->hasFile('image')) {
+                $data['image_path'] = $request->file('image')->store('products', 'public');
+            }
+
             $product = Product::create($data);
 
             if ($initialStock > 0) {
@@ -98,6 +103,18 @@ class ProductController extends Controller
         $data = $request->validated();
         unset($data['stock']);
 
+        if ($request->boolean('remove_image')) {
+            if ($product->image_path && Storage::disk('public')->exists($product->image_path)) {
+                Storage::disk('public')->delete($product->image_path);
+            }
+            $data['image_path'] = null;
+        } elseif ($request->hasFile('image')) {
+            if ($product->image_path && Storage::disk('public')->exists($product->image_path)) {
+                Storage::disk('public')->delete($product->image_path);
+            }
+            $data['image_path'] = $request->file('image')->store('products', 'public');
+        }
+
         $product->update($data);
 
         return redirect()->route('products.index')
@@ -106,6 +123,10 @@ class ProductController extends Controller
 
     public function destroy(Product $product): RedirectResponse
     {
+        if ($product->image_path && Storage::disk('public')->exists($product->image_path)) {
+            Storage::disk('public')->delete($product->image_path);
+        }
+
         $product->update(['is_active' => false]);
         $product->delete();
 

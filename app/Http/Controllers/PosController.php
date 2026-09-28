@@ -39,6 +39,7 @@ class PosController extends Controller
                 'stock',
                 'minimum_stock',
                 'unit',
+                'image_path',
             ]);
 
         $categories = Category::orderBy('name')->get(['id', 'name']);

@@ -23,6 +23,7 @@ class DatabaseSeeder extends Seeder
                 'name' => 'Pak Edy (Owner)',
                 'password' => Hash::make('password'),
                 'role' => 'owner',
+                'avatar_path' => 'profile/OJ0jrpbcqp6Wu6tKVb9dN5YVzAHdeSQ5X2LcrXPx.jpg',
                 'email_verified_at' => now(),
             ]
         );

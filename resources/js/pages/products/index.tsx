@@ -32,6 +32,7 @@ interface Product {
     stock: string;
     minimum_stock: string;
     unit: string;
+    image_url?: string | null;
     is_active: boolean;
     category: Category | null;
 }
@@ -275,14 +276,29 @@ export default function ProductsIndex({
                                                 className="border-b border-[#F1F5F9] last:border-b-0 hover:bg-[#F8FAFC]"
                                             >
                                                 <td className="px-4 py-3">
-                                                    <p className="text-sm font-medium text-[#0F172A]">
-                                                        {p.name}
-                                                    </p>
-                                                    <p className="text-xs text-[#94A3B8]">
-                                                        SKU: {p.sku}{' '}
-                                                        {p.barcode &&
-                                                            `· Barcode: ${p.barcode}`}
-                                                    </p>
+                                                    <div className="flex items-center gap-3">
+                                                        {p.image_url ? (
+                                                            <img
+                                                                src={p.image_url}
+                                                                alt={p.name}
+                                                                className="size-10 rounded-lg object-cover border border-[#E2E8F0] shrink-0"
+                                                            />
+                                                        ) : (
+                                                            <div className="size-10 rounded-lg bg-[#F1F5F9] border border-[#E2E8F0] flex items-center justify-center text-[#94A3B8] shrink-0">
+                                                                <Package className="size-5" />
+                                                            </div>
+                                                        )}
+                                                        <div className="min-w-0">
+                                                            <p className="text-sm font-medium text-[#0F172A] truncate">
+                                                                {p.name}
+                                                            </p>
+                                                            <p className="text-xs text-[#94A3B8]">
+                                                                SKU: {p.sku}{' '}
+                                                                {p.barcode &&
+                                                                    `· Barcode: ${p.barcode}`}
+                                                            </p>
+                                                        </div>
+                                                    </div>
                                                 </td>
                                                 <td className="px-4 py-3 text-sm text-[#64748B]">
                                                     {p.category?.name || '-'}
