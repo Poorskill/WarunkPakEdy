@@ -49,29 +49,6 @@ Route::get('demo-login/{role}', function (string $role) {
     return redirect()->route('dashboard');
 })->name('demo.login');
 
-Route::get('init-database-cranl', function () {
-    \Illuminate\Support\Facades\Artisan::call('migrate', ['--force' => true]);
-    $migrateOutput = \Illuminate\Support\Facades\Artisan::output();
-
-    \Illuminate\Support\Facades\Artisan::call('db:seed', ['--force' => true]);
-    $seedOutput = \Illuminate\Support\Facades\Artisan::output();
-
-    return response()->json([
-        'status' => 'success',
-        'migrate' => $migrateOutput,
-        'seed' => $seedOutput,
-        'counts' => [
-            'users' => \App\Models\User::count(),
-            'categories' => \App\Models\Category::count(),
-            'products' => \App\Models\Product::count(),
-            'suppliers' => \App\Models\Supplier::count(),
-            'customers' => \App\Models\Customer::count(),
-            'settings' => \App\Models\Setting::count(),
-            'stock_movements' => \App\Models\StockMovement::count(),
-        ],
-    ]);
-});
-
 // Indonesian URL aliases
 Route::redirect('admin', '/dashboard');
 Route::redirect('kasir', '/pos');
